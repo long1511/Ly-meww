@@ -1,87 +1,1080 @@
-<!DOCTYPE HTML>
-<html>
- 
+<!DOCTYPE html>
+<html lang="vi">
 <head>
-    <title>
-        Bouncing Ball!!
-    </title>
-    <style>
-        h1 {
-            color: green;
-        }
-         
-        canvas {
-            background-color: #F08080;
-            width: 600px;
-            height: 400px;
-            position: absolute;
-            top: 20%;
-            left: 20%;
-        }
-    </style>
- 
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>KHÁNH LY // Emotional Recovery Protocol</title>
+
+<style>
+/* =========================================================
+   RESET
+========================================================= */
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+html{
+  scroll-behavior:smooth;
+}
+
+body{
+  background:#02040a;
+  color:white;
+  overflow-x:hidden;
+  font-family:Inter,system-ui,sans-serif;
+  -webkit-tap-highlight-color:transparent;
+}
+
+/* =========================================================
+   VARIABLES
+========================================================= */
+:root{
+  --bg:#02040a;
+  --cyan:#59f7ff;
+  --pink:#ff5ca8;
+  --purple:#915dff;
+  --white:#ffffff;
+  --glass:rgba(255,255,255,0.06);
+  --blur:blur(14px);
+  --safe-top:env(safe-area-inset-top);
+  --safe-bottom:env(safe-area-inset-bottom);
+}
+
+/* =========================================================
+   GLOBAL FX
+========================================================= */
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.02),
+      rgba(255,255,255,0.02) 1px,
+      transparent 2px,
+      transparent 4px
+    );
+  mix-blend-mode:overlay;
+  opacity:.4;
+  z-index:999;
+}
+
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(145,93,255,.12), transparent 30%),
+    radial-gradient(circle at 80% 40%, rgba(89,247,255,.08), transparent 30%),
+    radial-gradient(circle at 50% 80%, rgba(255,92,168,.08), transparent 40%);
+  pointer-events:none;
+  z-index:-1;
+  animation:bgShift 15s ease-in-out infinite alternate;
+}
+
+@keyframes bgShift{
+  0%{transform:scale(1) rotate(0deg)}
+  100%{transform:scale(1.1) rotate(5deg)}
+}
+
+canvas{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  z-index:-2;
+}
+
+/* =========================================================
+   CUSTOM CURSOR
+========================================================= */
+
+.cursor{
+  width:20px;
+  height:20px;
+  border:1px solid var(--cyan);
+  border-radius:50%;
+  position:fixed;
+  pointer-events:none;
+  z-index:9999;
+  transform:translate(-50%,-50%);
+  box-shadow:
+    0 0 20px rgba(89,247,255,.9),
+    0 0 40px rgba(89,247,255,.5);
+}
+
+.cursor-dot{
+  width:6px;
+  height:6px;
+  background:var(--white);
+  border-radius:50%;
+  position:fixed;
+  pointer-events:none;
+  z-index:9999;
+  transform:translate(-50%,-50%);
+}
+
+/* =========================================================
+   LOADING SCREEN
+========================================================= */
+
+.loading{
+  position:fixed;
+  inset:0;
+  background:#000;
+  z-index:10000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  overflow:hidden;
+}
+
+.loading::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(
+      transparent,
+      rgba(89,247,255,.08),
+      transparent
+    );
+  animation:scan 3s linear infinite;
+}
+
+@keyframes scan{
+  from{transform:translateY(-100%)}
+  to{transform:translateY(100%)}
+}
+
+.loader-circle{
+  width:120px;
+  height:120px;
+  border-radius:50%;
+  border:2px solid rgba(89,247,255,.2);
+  border-top-color:var(--cyan);
+  animation:spin 2s linear infinite;
+  position:relative;
+  margin-bottom:30px;
+}
+
+.loader-circle::before{
+  content:"";
+  position:absolute;
+  inset:12px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.2);
+}
+
+@keyframes spin{
+  to{transform:rotate(360deg)}
+}
+
+.loading-text{
+  font-size:clamp(14px,2vw,18px);
+  color:var(--cyan);
+  letter-spacing:3px;
+  text-transform:uppercase;
+  min-height:24px;
+  text-align:center;
+}
+
+.progress{
+  width:min(80vw,500px);
+  height:8px;
+  background:rgba(255,255,255,.06);
+  margin-top:30px;
+  border-radius:20px;
+  overflow:hidden;
+}
+
+.progress-bar{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--cyan),var(--purple));
+  box-shadow:0 0 20px var(--cyan);
+  transition:width .3s;
+}
+
+/* =========================================================
+   MUSIC OVERLAY
+========================================================= */
+
+.music-gate{
+  position:fixed;
+  inset:0;
+  z-index:9998;
+  background:rgba(0,0,0,.82);
+  backdrop-filter:blur(10px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  gap:20px;
+  opacity:0;
+  pointer-events:none;
+  transition:.8s;
+}
+
+.music-gate.show{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.music-btn{
+  padding:18px 32px;
+  border:none;
+  border-radius:100px;
+  background:linear-gradient(90deg,var(--cyan),var(--purple));
+  color:white;
+  font-size:18px;
+  cursor:pointer;
+  box-shadow:0 0 40px rgba(89,247,255,.5);
+}
+
+.music-btn:active{
+  transform:scale(.96);
+}
+
+/* =========================================================
+   FLOATING UI
+========================================================= */
+
+.floating-ui{
+  position:fixed;
+  top:calc(20px + var(--safe-top));
+  right:20px;
+  z-index:500;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.holo-panel{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  backdrop-filter:blur(18px);
+  border-radius:20px;
+  padding:14px;
+  box-shadow:
+    0 0 40px rgba(89,247,255,.08),
+    inset 0 0 20px rgba(255,255,255,.04);
+}
+
+.logo-ai{
+  width:58px;
+  height:58px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+  cursor:pointer;
+  user-select:none;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,.2), transparent),
+    linear-gradient(135deg,var(--cyan),var(--purple));
+  box-shadow:
+    0 0 30px rgba(89,247,255,.4);
+}
+
+.visualizer{
+  display:flex;
+  align-items:flex-end;
+  gap:4px;
+  height:40px;
+}
+
+.bar{
+  width:4px;
+  border-radius:20px;
+  background:linear-gradient(var(--cyan),var(--purple));
+  animation:bar .7s infinite alternate;
+}
+
+.bar:nth-child(2){animation-delay:.1s}
+.bar:nth-child(3){animation-delay:.2s}
+.bar:nth-child(4){animation-delay:.3s}
+.bar:nth-child(5){animation-delay:.4s}
+
+@keyframes bar{
+  from{height:6px}
+  to{height:36px}
+}
+
+/* =========================================================
+   HERO
+========================================================= */
+
+.hero{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+  padding:100px 20px;
+}
+
+.hero h1{
+  font-size:clamp(60px,14vw,200px);
+  letter-spacing:.12em;
+  line-height:.9;
+  font-weight:900;
+  text-transform:uppercase;
+  color:white;
+  text-shadow:
+    0 0 20px rgba(255,255,255,.4),
+    0 0 60px rgba(89,247,255,.3);
+  animation:titlePulse 5s infinite ease-in-out;
+}
+
+.hero p{
+  margin-top:24px;
+  font-size:clamp(18px,3vw,32px);
+  color:rgba(255,255,255,.8);
+}
+
+@keyframes titlePulse{
+  0%,100%{
+    transform:translateY(0);
+    filter:blur(0);
+  }
+  50%{
+    transform:translateY(-8px);
+    filter:blur(.4px);
+  }
+}
+
+/* =========================================================
+   EXPERIENCE SECTION
+========================================================= */
+
+.panel{
+  min-height:100vh;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:10vh 7vw;
+  overflow:hidden;
+}
+
+.message{
+  max-width:900px;
+  position:relative;
+  z-index:3;
+}
+
+.message h2{
+  font-size:clamp(34px,7vw,90px);
+  line-height:1.1;
+  font-weight:800;
+  text-shadow:
+    0 0 20px rgba(255,255,255,.2),
+    0 0 60px rgba(89,247,255,.12);
+  opacity:0;
+  transform:translateY(80px);
+  transition:1.3s cubic-bezier(.2,.9,.2,1);
+}
+
+.message.visible h2{
+  opacity:1;
+  transform:translateY(0);
+}
+
+.sub{
+  margin-top:20px;
+  color:rgba(255,255,255,.55);
+  font-size:clamp(14px,2vw,22px);
+  letter-spacing:2px;
+}
+
+.glass{
+  position:absolute;
+  inset:auto;
+  width:340px;
+  height:340px;
+  border-radius:40px;
+  background:rgba(255,255,255,.04);
+  backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.08);
+  filter:blur(0);
+}
+
+.glass.one{
+  top:10%;
+  left:-100px;
+  transform:rotate(20deg);
+}
+
+.glass.two{
+  bottom:10%;
+  right:-100px;
+  transform:rotate(-20deg);
+}
+
+.grid{
+  position:absolute;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(89,247,255,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(89,247,255,.06) 1px, transparent 1px);
+  background-size:60px 60px;
+  transform:perspective(600px) rotateX(75deg) translateY(40%);
+  opacity:.12;
+}
+
+/* =========================================================
+   WHISPERS
+========================================================= */
+
+.whisper{
+  position:fixed;
+  color:rgba(255,255,255,.12);
+  font-size:clamp(12px,2vw,18px);
+  pointer-events:none;
+  z-index:50;
+  opacity:0;
+  transition:2s;
+  text-shadow:0 0 20px rgba(255,255,255,.4);
+}
+
+/* =========================================================
+   ENDING
+========================================================= */
+
+.ending{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  flex-direction:column;
+  padding:20px;
+  position:relative;
+}
+
+.ending h2{
+  font-size:clamp(30px,8vw,90px);
+  line-height:1.2;
+  opacity:.95;
+  text-shadow:0 0 40px rgba(255,255,255,.3);
+}
+
+.fade-black{
+  position:absolute;
+  inset:0;
+  background:black;
+  opacity:0;
+  pointer-events:none;
+  transition:5s;
+}
+
+.fade-black.active{
+  opacity:1;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media(max-width:768px){
+
+  .floating-ui{
+    right:12px;
+    top:calc(12px + var(--safe-top));
+  }
+
+  .holo-panel{
+    padding:10px;
+    border-radius:18px;
+  }
+
+  .logo-ai{
+    width:52px;
+    height:52px;
+  }
+
+  .glass{
+    width:220px;
+    height:220px;
+  }
+
+  .message{
+    width:100%;
+  }
+
+  .panel{
+    align-items:flex-end;
+    padding-bottom:22vh;
+  }
+
+  .hero{
+    align-items:flex-end;
+    padding-bottom:25vh;
+  }
+}
+
+</style>
 </head>
- 
+
 <body>
-    <center>
-        <h1>GeeksforGeeks</h1>
-        <h3>Bouncing ball using JavaScript</h3>
-        <canvas>
-        </canvas>
-        <script>
-            var canvas = document.querySelector("canvas");
- 
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
- 
-            var l = canvas.getContext('2d');
- 
-            // x and y are the co-ordinates of the circle
- 
-            // vx and vy are the respective speeds
- 
-            var x = Math.floor(Math.random() * innerWidth);
-            var y = Math.floor(Math.random() * innerHeight);
-            var vx = Math.floor(Math.random() * 2);
-            var vy = Math.floor(Math.random() * 4);
-            var radius = 20;
- 
-            move();
-           
-            // This function will do the animation
-            function move() {
-                requestAnimationFrame(move);
- 
-                // It clears the specified pixels within
-                // the given rectangle
-                l.clearRect(0, 0, innerWidth, innerHeight);
- 
-                // Creating a circle
-                l.beginPath();
-                l.strokeStyle = "black";
-                l.arc(x, y, radius, 0, Math.PI * 2, false);
-                l.stroke();
- 
-                // Conditions sso that the ball bounces
-                // from the edges
-                if (radius + x > innerWidth)
-                    vx = 0 - vx;
- 
-                if (x - radius < 0)
-                    vx = 0 - vx;
- 
-                if (y + radius > innerHeight)
-                    vy = 0 - vy;
- 
-                if (y - radius < 0)
-                    vy = 0 - vy;
- 
-                x = x + vx;
-                y = y + vy;
- 
-            }
-        </script>
-    </center>
+
+<!-- =========================================================
+     PARTICLE CANVAS
+========================================================= -->
+<canvas id="space"></canvas>
+
+<!-- =========================================================
+     CUSTOM CURSOR
+========================================================= -->
+<div class="cursor"></div>
+<div class="cursor-dot"></div>
+
+<!-- =========================================================
+     LOADING
+========================================================= -->
+<div class="loading" id="loading">
+  <div class="loader-circle"></div>
+  <div class="loading-text" id="loadingText"></div>
+  <div class="progress">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+</div>
+
+<!-- =========================================================
+     MUSIC GATE
+========================================================= -->
+<div class="music-gate" id="musicGate">
+  <h2 style="font-size:clamp(28px,6vw,60px)">Tap để bắt đầu hành trình</h2>
+  <button class="music-btn" id="startBtn">ENTER</button>
+</div>
+
+<!-- =========================================================
+     FLOATING UI
+========================================================= -->
+<div class="floating-ui">
+
+  <div class="holo-panel">
+    <div class="logo-ai" id="logoAI">AI</div>
+  </div>
+
+  <div class="holo-panel">
+    <div class="visualizer">
+      <div class="bar"></div>
+      <div class="bar"></div>
+      <div class="bar"></div>
+      <div class="bar"></div>
+      <div class="bar"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- =========================================================
+     AUDIO
+========================================================= -->
+
+<audio id="bgm" loop>
+  <source src="https://cdn.pixabay.com/audio/2022/03/15/audio_5b1d55f3f0.mp3">
+</audio>
+
+<!-- =========================================================
+     HERO
+========================================================= -->
+
+<section class="hero">
+  <div>
+    <h1>KHÁNH LY</h1>
+    <p>Bạn đã chịu đựng đủ rồi.</p>
+  </div>
+</section>
+
+<!-- =========================================================
+     EXPERIENCE
+========================================================= -->
+
+<section class="panel">
+  <div class="grid"></div>
+  <div class="glass one"></div>
+  <div class="glass two"></div>
+
+  <div class="message">
+    <h2>
+      Bạn không yếu đuối.<br>
+      Bạn chỉ đã quá mệt.
+    </h2>
+    <div class="sub">AI emotional stabilization system</div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="grid"></div>
+
+  <div class="message">
+    <h2>
+      Không ai thấy<br>
+      những trận chiến trong đầu bạn.
+    </h2>
+    <div class="sub">Internal conflict detected</div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="grid"></div>
+
+  <div class="message">
+    <h2>
+      Có những ngày tồn tại thôi<br>
+      cũng là cố gắng rồi.
+    </h2>
+    <div class="sub">Recovery protocol running...</div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="grid"></div>
+
+  <div class="message">
+    <h2>
+      Đừng ghét bản thân<br>
+      vì đang hồi phục chậm.
+    </h2>
+    <div class="sub">Your pace is still progress</div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="grid"></div>
+
+  <div class="message">
+    <h2>
+      Khánh Ly...<br>
+      tương lai vẫn đang đợi bạn.
+    </h2>
+    <div class="sub">Signal found in the darkness</div>
+  </div>
+</section>
+
+<!-- =========================================================
+     ENDING
+========================================================= -->
+
+<section class="ending">
+  <h2>
+    Khánh Ly à...<br>
+    thế giới này vẫn cần bạn.
+  </h2>
+
+  <div style="
+    margin-top:40px;
+    color:rgba(255,255,255,.25);
+    letter-spacing:6px;
+    text-transform:uppercase;
+    font-size:12px;
+  ">
+    Emotional Recovery Complete
+  </div>
+
+  <div class="fade-black" id="fadeBlack"></div>
+</section>
+
+<!-- =========================================================
+     WHISPER
+========================================================= -->
+
+<div class="whisper" id="whisper"></div>
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
+
+<script>
+
+/* =========================================================
+   PERFORMANCE DETECT
+========================================================= */
+
+const isMobile = window.innerWidth < 768;
+const particleCount = isMobile ? 80 : 180;
+
+/* =========================================================
+   LOADING SYSTEM
+========================================================= */
+
+const loadingText = document.getElementById("loadingText");
+const progressBar = document.getElementById("progressBar");
+const loading = document.getElementById("loading");
+
+const loadingMessages = [
+  "Searching emotional status...",
+  "Pain detected...",
+  "Initializing recovery protocol...",
+  "Restoring hope...",
+  "Connecting to Khánh Ly..."
+];
+
+let loadIndex = 0;
+let progress = 0;
+
+const loadInterval = setInterval(() => {
+
+  loadingText.innerHTML = loadingMessages[loadIndex] || "Complete";
+  loadIndex++;
+
+  progress += 20;
+  progressBar.style.width = progress + "%";
+
+  if(progress >= 100){
+    clearInterval(loadInterval);
+
+    setTimeout(() => {
+      loading.style.opacity = "0";
+      loading.style.pointerEvents = "none";
+
+      setTimeout(() => {
+        loading.remove();
+        initAudio();
+      },1000);
+
+    },1000);
+  }
+
+},1200);
+
+/* =========================================================
+   AUDIO
+========================================================= */
+
+const bgm = document.getElementById("bgm");
+const musicGate = document.getElementById("musicGate");
+const startBtn = document.getElementById("startBtn");
+
+bgm.volume = 0;
+
+function fadeAudio(target=0.5,duration=3000){
+
+  const step = target / (duration / 50);
+
+  const fade = setInterval(() => {
+
+    if(bgm.volume < target){
+      bgm.volume = Math.min(target,bgm.volume + step);
+    }else{
+      clearInterval(fade);
+    }
+
+  },50);
+}
+
+async function initAudio(){
+
+  try{
+    await bgm.play();
+    fadeAudio(.45,4000);
+
+  }catch(e){
+
+    musicGate.classList.add("show");
+
+  }
+}
+
+startBtn.addEventListener("click", async() => {
+
+  if(navigator.vibrate) navigator.vibrate(20);
+
+  await bgm.play();
+
+  fadeAudio(.45,4000);
+
+  musicGate.classList.remove("show");
+
+});
+
+/* =========================================================
+   CURSOR
+========================================================= */
+
+const cursor = document.querySelector(".cursor");
+const dot = document.querySelector(".cursor-dot");
+
+window.addEventListener("mousemove", e => {
+
+  cursor.style.left = e.clientX + "px";
+  cursor.style.top = e.clientY + "px";
+
+  dot.style.left = e.clientX + "px";
+  dot.style.top = e.clientY + "px";
+
+});
+
+/* =========================================================
+   PARTICLE SYSTEM
+========================================================= */
+
+const canvas = document.getElementById("space");
+const ctx = canvas.getContext("2d");
+
+let w,h;
+
+function resize(){
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
+}
+
+resize();
+window.addEventListener("resize", resize);
+
+const particles = [];
+
+for(let i=0;i<particleCount;i++){
+
+  particles.push({
+    x:Math.random()*w,
+    y:Math.random()*h,
+    r:Math.random()*2,
+    s:Math.random()*0.6 + 0.1,
+    a:Math.random()*0.6
+  });
+
+}
+
+function draw(){
+
+  ctx.clearRect(0,0,w,h);
+
+  particles.forEach(p => {
+
+    p.y += p.s;
+
+    if(p.y > h){
+      p.y = -10;
+      p.x = Math.random()*w;
+    }
+
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+
+    ctx.fillStyle = `rgba(255,255,255,${p.a})`;
+    ctx.fill();
+
+  });
+
+  requestAnimationFrame(draw);
+}
+
+draw();
+
+/* =========================================================
+   INTERSECTION ANIMATION
+========================================================= */
+
+const observer = new IntersectionObserver(entries => {
+
+  entries.forEach(entry => {
+
+    if(entry.isIntersecting){
+
+      entry.target.classList.add("visible");
+
+    }
+
+  });
+
+},{
+  threshold:.4
+});
+
+document.querySelectorAll(".message").forEach(el => {
+  observer.observe(el);
+});
+
+/* =========================================================
+   PARALLAX
+========================================================= */
+
+window.addEventListener("scroll", () => {
+
+  const y = window.scrollY;
+
+  document.querySelectorAll(".panel").forEach((panel,index) => {
+
+    panel.style.transform = `translateY(${y * (0.0005 * (index+1))}px)`;
+
+  });
+
+});
+
+/* =========================================================
+   WHISPER SYSTEM
+========================================================= */
+
+const whisper = document.getElementById("whisper");
+
+const whispers = [
+  "you survived again",
+  "the night won't last forever",
+  "please stay",
+  "you're still here",
+  "signal restored",
+  "the stars remember you",
+  "recovery takes time"
+];
+
+function randomWhisper(){
+
+  whisper.innerHTML = whispers[Math.floor(Math.random()*whispers.length)];
+
+  whisper.style.left = Math.random()*80 + "vw";
+  whisper.style.top = Math.random()*80 + "vh";
+
+  whisper.style.opacity = .8;
+
+  setTimeout(() => {
+    whisper.style.opacity = 0;
+  },2000);
+
+}
+
+setInterval(randomWhisper,5000);
+
+/* =========================================================
+   SECRET MESSAGE
+========================================================= */
+
+const logoAI = document.getElementById("logoAI");
+
+let clicks = 0;
+
+logoAI.addEventListener("click", () => {
+
+  clicks++;
+
+  if(navigator.vibrate) navigator.vibrate(10);
+
+  if(clicks >= 6){
+
+    const div = document.createElement("div");
+
+    div.innerHTML = `
+      <div style="
+        position:fixed;
+        inset:0;
+        z-index:9999;
+        background:rgba(0,0,0,.88);
+        backdrop-filter:blur(14px);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        text-align:center;
+        padding:30px;
+        font-size:clamp(26px,5vw,70px);
+        line-height:1.3;
+      ">
+        Cảm ơn vì vẫn còn ở đây.
+      </div>
+    `;
+
+    document.body.appendChild(div);
+
+    setTimeout(() => {
+      div.remove();
+      clicks = 0;
+    },4000);
+
+  }
+
+});
+
+/* =========================================================
+   TOUCH PARALLAX
+========================================================= */
+
+window.addEventListener("deviceorientation", e => {
+
+  const x = e.gamma || 0;
+  const y = e.beta || 0;
+
+  document.body.style.transform =
+    `translate(${x * .05}px, ${y * .03}px)`;
+
+});
+
+/* =========================================================
+   ENDING FADE
+========================================================= */
+
+const ending = document.querySelector(".ending");
+const fadeBlack = document.getElementById("fadeBlack");
+
+window.addEventListener("scroll", () => {
+
+  const rect = ending.getBoundingClientRect();
+
+  if(rect.top < window.innerHeight * .5){
+
+    fadeBlack.classList.add("active");
+
+    const fade = setInterval(() => {
+
+      if(bgm.volume > .01){
+        bgm.volume -= .01;
+      }
+
+    },200);
+
+  }
+
+});
+
+/* =========================================================
+   FAKE AI TERMINAL
+========================================================= */
+
+const aiResponses = [
+  "EMOTIONAL DAMAGE DETECTED",
+  "HOPE LEVEL INCREASING",
+  "RECOVERY IN PROGRESS",
+  "MEMORY FRAGMENTS STABILIZED",
+  "SUBJECT STILL FIGHTING"
+];
+
+const terminal = document.createElement("div");
+
+terminal.style.cssText = `
+  position:fixed;
+  bottom:calc(20px + env(safe-area-inset-bottom));
+  left:20px;
+  z-index:500;
+  padding:14px 18px;
+  border-radius:18px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  backdrop-filter:blur(18px);
+  color:#59f7ff;
+  font-size:12px;
+  letter-spacing:2px;
+`;
+
+document.body.appendChild(terminal);
+
+setInterval(() => {
+
+  terminal.innerHTML =
+    aiResponses[Math.floor(Math.random()*aiResponses.length)];
+
+},2500);
+
+</script>
+
 </body>
- 
 </html>
